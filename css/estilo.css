@@ -1,0 +1,15 @@
+#cuadrado {
+    border: white 10px solid;
+    border-radius: 20px;
+    position: absolute;
+    height: 410px;
+    width: 728px;
+    margin-left: 25%;
+    margin-top: 10%;
+}
+
+#musica{
+    margin-left: 25%;
+    position: absolute;
+    margin-top: 5%;
+}

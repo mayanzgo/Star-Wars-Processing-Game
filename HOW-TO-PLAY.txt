@@ -1,0 +1,6 @@
+*To start the game press Start key
+*Use the ⬆️ ⬇️ Arrows to move
+*Shoot from the SPACEBAR
+*To restart the game, press R key
+
+*You have to destroy a total of 10 ships

@@ -1,0 +1,345 @@
+<html>
+    <link rel="stylesheet" type="text/css" href="css/estilo.css">
+    <head>
+      <audio id="musica" src="music/musica-juego.mp3" autoplay controls></audio>
+      <div id="cuadrado">   
+        <script language="javascript" src="js/core.jar"></script>
+        <script language="javascript" src="js/gluegen-rt-natives-windows-amd64.jar"></script>
+        <script language="javascript" src="js/gluegen-rt.jar"></script>
+        <script language="javascript" src="js/javamp3-1.0.4.jar"></script>
+        <script language="javascript" src="js/jogl-all-natives-windows-amd64.jar"></script>
+        <script language="javascript" src="js/jogl-all.jar"></script>
+        <script language="javascript" src="js/jsyn-20171016.jar"></script>
+        <script language="javascript" src="js/sound.jar"></script>
+        <script language="javascript" src="js/processing.min.js"></script>         
+        <script type="text/processing" data-processing-target="mycanvas">
+
+// Sirve para dar un nombre a una imagen para poder referenciarla.
+PImage inicio;
+PImage bg;
+PImage tie;
+PImage xwing;
+PImage laser;
+PImage laserenemigo;
+PImage hyper;
+PImage gameover;
+PImage win;
+PImage explosion;
+PImage press;
+
+//Sirve para darles un valor numerico a estas variables.
+int blaster;
+int temporizador;
+int naveY;
+int EstaBala;
+int EstaBalaEnemiga;
+int DispararEnemigo;
+int DispararEnemigotemporizador;
+int ContadorKills;
+int [] enemigoX;
+int [] enemigoY;
+int[] balaX;
+int[] balaY;
+int[] enemybalaX;
+int[] enemybalaY;
+int[] enemigoYspeed;
+int[] enemigoXspeed;
+int opt = 1;
+
+//Sirve para determinar si son verdaderos o falsos para determinar su flujo.
+boolean[] enemyvivo;
+boolean FlechaArriba;
+boolean FlechaAbajo;
+boolean disparo;
+boolean vivo;
+
+//Carga toda la configuracion del juego: Imagenes,Fisicas,etc.
+void setup () { 
+  //Determino el tamaño de pantalla del juego
+  size(728, 410);
+  //Cargo las todas las imagenes para posteriormente utilizarlas.
+  bg = loadImage("models/fondojuego.jpg");
+  xwing = loadImage("models/xwing.png");
+  laser = loadImage("models/laserbeam.png");
+  laserenemigo = loadImage("models/laserbeamenemigo.png");
+  tie = loadImage("models/tiefighter.png");
+  inicio = loadImage("models/fondoinicio.png");
+  gameover = loadImage("models/gameover.jpg");
+  win = loadImage("models/win.jpg");
+  explosion = loadImage("models/explosion.png");
+  press = loadImage("models/press.jpg");
+  image(bg,0,0,728,410);
+
+  //Sirve para que no muestre el cursor en el juego
+  noCursor();
+
+  //Utilizo los int especificados anteriormente y les doy un valor.
+  temporizador = 0;
+  enemigoX = new int [10];
+  enemigoY = new int [10];
+  enemigoYspeed = new int [10];
+  enemigoXspeed = new int [10];
+  enemyvivo = new boolean [10];
+  balaX = new int [10];
+  balaY = new int [10];
+  enemybalaX = new int [20];
+  enemybalaY = new int [20];
+  naveY = 50;  
+  EstaBala = 0;
+  EstaBalaEnemiga = 0;
+  DispararEnemigotemporizador = 0;
+  vivo = true;
+  ContadorKills = 0;
+
+  //Sirve para mostrar el juego a la cantidad seleccionada de FPS, en mi caso 60fps.
+  frameRate (75);
+
+  //Es una funcion que sirve para que cuando de a un enemigo, la bala desaparezca.
+  for (int i = 0; i < balaX.length; i++) {
+    balaX[i] = -1000;
+    balaY [i] = -1000;
+  }
+
+  //Es una funcion que sirve para que cuando me de un enemigo, la bala desaparezca.
+  for (int i = 0; i < enemybalaX.length; i++) {
+    enemybalaX[i] = -1000;
+    enemybalaY[i] = -1000;
+  }
+
+  //Funcion que determina la posicion de las naves entre coordenadas y tambien la velocidad con la que empiezan a moverse.
+  for (int i = 0; i < enemigoX.length; i++) {
+    enemyvivo[i] = true;
+    enemigoX[i] = (int) random (200, 500);
+    enemigoY[i] = (int) random (50, 500);
+    enemigoYspeed[i] = (int) random (-5, 5);
+    enemigoXspeed[i] = (int) random (-5, 5);
+
+    while (enemigoXspeed[i] == 0) { 
+      enemigoXspeed[i] = (int) random (-5, 5);
+    }
+    while (enemigoYspeed[i] == 0) { 
+      enemigoYspeed[i] = (int) random (-5, 5);
+    }
+  }
+}
+
+//"Dibuja" todas las configuracion creadas anteriormente.
+void draw () { 
+  image(press,0,0,728,410);
+  //Este if sirve para poder tener la pantalla de Press to Start y que cuando le de se ejecute el resto del codigo.
+  if (opt != 1) {
+    //Si el jugador esta vivo realiza estas configuraciones.
+    if (vivo == true && ContadorKills < 10) {
+
+      //Dibuja el fondo del juego.
+      background(bg);            
+      //Dibuja nuestra nave.
+      image(xwing, 0, naveY, 100, 100);
+      //Como dice, crea la bala enemiga.
+      CreateEnemyBullet ();
+      //Determino la imagen de la bala y la velocidad a la que va.
+      for (int i = 0; i < balaX.length; i++) {
+        image(laser, balaX[i], balaY[i]+40, 20, 20);
+        balaX[i] += 10;
+      } 
+      //Determino la imagen de la bala enemiga y la velocidad a la que va, es menor ya que al ser tantos enemigos si pongo la misma velocidad es muy dificil ganar.
+      for (int i = 0; i < enemybalaX.length; i++) {
+        image(laserenemigo, enemybalaX[i], enemybalaY[i]+30, 20, 20);
+        enemybalaX[i] -= 5;
+      }
+
+      //Ejecuta las "fisicas" y colisiones de las balas.
+      enemy();            
+      HitEnemyLogic();          
+      HitMeLogic ();     
+
+      //Configura la velocidad a la que funciona nuestra nave y con que teclas se mueve.
+      if (FlechaArriba ==  true) {
+        naveY -= 3;
+      }          
+      if (FlechaAbajo ==  true) {
+        naveY += 3;
+      }            
+      if (disparo == true) { 
+        //Ejecuta la funcion de crear la bala (Se especifica mas adelante).
+        CreateBullet();
+      }          
+      //Determinamos que el disparo es falso hasta que se dispara.
+      disparo = false;
+      temporizador += 1;
+    } 
+
+    //Si el jugador a muerto, proyecta una imagen de Game Over.
+    else {       
+      if (vivo == false) {
+        image(gameover,0,0,728,410);
+      }       
+      //Si el jugador esta vivo y ha destruido las naves, proyecta una imagen de You Win.
+      if (ContadorKills >= 10 ) {
+        image(win,0,0,728,410);
+      }
+    }
+  }
+}
+
+//Si la tecla esta presionada, realiza estas funciones.
+void keyPressed () { 
+  opt++;
+  if (keyCode == UP) {
+    FlechaArriba = true;
+  }  
+  if (keyCode == DOWN) {
+    FlechaAbajo =  true;
+  }
+}
+
+//Si la tecla se ha dejado de presionar, realiza estas funciones. (Sirve para que no desaparezcan las balas al dispararlas).
+void keyReleased () {
+  if (keyCode == 32) {
+    disparo = true;
+  }   
+  if (keyCode == UP) {
+    FlechaArriba = false;
+  }  
+  if (keyCode == DOWN) {
+    FlechaAbajo =  false;
+  }  
+  //Reinicias el juego pulsando la tecla R.
+  if (keyCode == 82) {
+    reset();
+  }
+  }
+
+//Crea la vale y en que posicion se coloca para poder ejecutarla.
+void CreateBullet () {  
+  balaX [EstaBala] = 80;
+  balaY [EstaBala] = naveY; 
+  if ( EstaBala < 5 ) {
+    EstaBala++;
+  } else {
+    EstaBala = 0;
+  }
+}
+
+//Crea la bala enemiga
+void CreateEnemyBullet () { 
+  if (DispararEnemigotemporizador > 30) {  
+    DispararEnemigo = (int) random (0, enemigoX.length); 
+    //Si nosotros todavia estamos vivos, la nave disparara 
+    while (enemyvivo[DispararEnemigo] == false) {  
+      DispararEnemigo = (int) random (0, enemigoX.length);
+    }  
+    enemybalaX [EstaBalaEnemiga] = enemigoX[DispararEnemigo] ;
+    enemybalaY [EstaBalaEnemiga] = enemigoY[DispararEnemigo] ;
+
+    if ( EstaBalaEnemiga < 19 ) {
+      EstaBalaEnemiga++;
+    } else {
+      EstaBalaEnemiga = 0;
+    } 
+    //Tiempo de recarga de los disparos para que los enemigos no spameen los disparos.
+    DispararEnemigotemporizador = 0;
+  } else { 
+    DispararEnemigotemporizador += 1;
+  }
+}
+
+//Las colisiones que recibo, configuro la hitbox de la nave y determino que estoy muerto.
+void HitMeLogic () {
+  for (int i = 0; i < enemybalaX.length; i++) {
+    if ( enemybalaX[i] < 40  && enemybalaX[i] > 10  && enemybalaY[i] > naveY  && enemybalaY[i] < naveY + 50) {        
+      vivo = false;
+      image(explosion, 0, naveY, 100, 100);
+      enemybalaY[i] = -1000;
+    }
+  }
+}
+
+//Las colisiones del enemigo, si reciben una bala sube el contador de muertes y hace que la bala que dispare desaparezca.
+void HitEnemyLogic () {
+  for (int i = 0; i < balaX.length; i++) {
+    for (int j = 0; j < enemigoX.length; j++) {
+      if ( balaX[i] > enemigoX[j] && balaX[i] < enemigoX[j] + 76 && balaY[i] > enemigoY[j] && balaY[i] < enemigoY[j] + 76 && enemyvivo[j] == true) {        
+        enemyvivo[j] = false;
+        image(explosion, enemigoX[j], enemigoY[j], 80, 80);
+        ContadorKills += 1;
+        balaY[i] = -1000;
+      }
+    }
+  }
+}
+
+//Ejecuta las configuraciones del enemigo, es decir, la imagen de la nave y la velocidad.
+void enemy () {   
+  for ( int i = 0; i < enemigoX.length; i++) {  
+    if (enemyvivo[i] == true) {  
+      image(tie, enemigoX[i], enemigoY[i], 80, 80);      
+
+      if (enemigoY[i] > 570 || enemigoY[i] < 0) {
+        enemigoYspeed[i] = enemigoYspeed[i] * -1;
+      } 
+
+      if (enemigoX[i] > 570 || enemigoX[i] < 100) {
+        enemigoXspeed[i] = enemigoXspeed[i] * -1;
+      }           
+      enemigoY[i] += enemigoYspeed[i];
+      enemigoX[i] += enemigoXspeed[i];
+    }
+  }
+}
+
+//Ejecuta la funcion Reset, es decir, cuando pulsamos la R, determinamos que queremos hacer con nuestra nave y la de los enemigo
+//Las devolvemos a la posicion inicial, reiniciamos la cancion y el temporizador, hacemos desaparecer las balas.
+void reset () {
+  temporizador = 0;
+  enemigoX = new int [10];
+  enemigoY = new int [10];
+  enemigoYspeed = new int [10];
+  enemigoXspeed = new int [10];
+  enemyvivo = new boolean [10];
+  balaX = new int [10];
+  balaY = new int [10];
+  enemybalaX = new int [20];
+  enemybalaY = new int [20];
+  naveY = 50;
+  frameRate (75);
+  EstaBala = 0;
+  EstaBalaEnemiga = 0;
+  DispararEnemigotemporizador = 0;
+  vivo = true;
+  ContadorKills = 0;
+
+  for (int i = 0; i < balaX.length; i++) {
+    balaX[i] = -1000;
+    balaY [i] = -1000;
+  }
+  for (int i = 0; i < enemybalaX.length; i++) {
+    enemybalaX[i] = -1000;
+    enemybalaY[i] = -1000;
+  }
+  for (int i = 0; i < enemigoX.length; i++) {
+    enemyvivo[i] = true;
+    enemigoX[i] = (int) random (200, 500);
+    enemigoY[i] = (int) random (50, 500);
+    enemigoYspeed[i] = (int) random (-5, 5);
+    enemigoXspeed[i] = (int) random (-5, 5);
+
+    while (enemigoXspeed[i] == 0) { 
+      enemigoXspeed[i] = (int) random (-5, 5);
+    }
+
+    while (enemigoYspeed[i] == 0) { 
+      enemigoYspeed[i] = (int) random (-5, 5);
+    }
+  }
+}
+      
+      </script>
+      <canvas id="mycanvas"></canvas>
+      </div>
+    </head>
+    <body background="models/fondopantalla.jpg">
+                
+    </body>
+   
+</html>

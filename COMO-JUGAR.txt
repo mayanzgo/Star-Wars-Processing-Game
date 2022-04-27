@@ -1,0 +1,6 @@
+*Para empezar el juego dar tecla Start
+*Utiliza las Flechas de ⬆️ ⬇️ para moverte
+*Dispara de la BARRA ESPACIADORA
+*Para reiniciar el Juego, presionar tecla R
+
+*Tienes que destruir un total de 10 naves
